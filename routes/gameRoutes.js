@@ -10,15 +10,15 @@ const SECRET = process.env.SECRET_KEY || 'dev-secret-key';
 router.post('', async (req, res) => {
 
   try {
-    const { name, date, location, sport, leader, description } = req.body;
-    if (!name || !date || !location || !sport || !leader ) {
+    const { name, date, location, fsq_id, sport, leader, description } = req.body;
+    if (!name || !date || !location || !fsq_id || !sport || !leader ) {
       return res.status(400).json({ error: 'name, date, location, sport, and leader are required' });
     }
     const leadUser = await User.findOne({username: leader});
     if (!leadUser) {
       return res.status(404).json({ error: 'Leader not found' });
     }
-    const game = new Game({ name, gameMembers: [leadUser], date, location, sport, leader: leadUser._id, description: description });
+    const game = new Game({ name, gameMembers: [leadUser], date, location, fsq_id, sport, leader: leadUser._id, description: description });
     await game.save();
 
     res.status(201).json({ message: 'Game created successfully' });
@@ -28,13 +28,13 @@ router.post('', async (req, res) => {
   }
 });
 
-router.get('/location/:location', async (req, res) => {
+router.get('/location/:locationID', async (req, res) => {
   try {
-    const { location } = req.params;
-    if (!location) {
-      return res.status(400).json({ error: 'location is required' });
+    const { locationID } = req.params;
+    if (!locationID) {
+      return res.status(400).json({ error: 'locationID is required' });
     }
-    const games = await Game.find({ location: location }).populate('gameMembers').populate('leader');
+    const games = await Game.find({ fsq_id: locationID }).populate('gameMembers').populate('leader');
     res.json(games);
   } catch {
     res.status(500).json({ error: 'Error getting game' });
@@ -64,7 +64,7 @@ router.get('/user/member/:userid', async (req, res) => {
       return res.status(400).json({ error: 'userid is required' });
     }
 
-    const games = await Game.find({ gameMembers: userid });
+    const games = await Game.find({ gameMembers: userid, leader: { $ne: userid } });
     res.json(games);
   } catch {
     res.status(500).json({ error: 'Error getting member game' });
@@ -91,7 +91,7 @@ router.get('/id/:id', async (req, res) => {
 });
 
 // delete game works
-router.delete('', async (req, res) => {
+router.delete('/:gameid', async (req, res) => {
   try {
     const { gameid } = req.params;
     if (!gameid) {
@@ -122,11 +122,14 @@ router.patch('/removeMember', async (req, res) => {
       return res.status(404).json({ error: 'Member not found' });
     }
 
-    if (game.gameMembers.some((existingMember) => existingMember._id.toString() === member._id.toString())) {
-      return res.status(400).json({ error: 'User already in game' });
+    // Remove member if present
+    const initialLength = game.gameMembers.length;
+    game.gameMembers = game.gameMembers.filter((existingMember) => existingMember._id.toString() !== member._id.toString());
+    if (game.gameMembers.length === initialLength) {
+      console.log(here)
+      return res.status(404).json({ error: 'User not in game' });
     }
 
-    game.gameMembers.push(member._id);
     await game.save();
     res.json({ message: 'Game member removed successfully' });
   } catch {

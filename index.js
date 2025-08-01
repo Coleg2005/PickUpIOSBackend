@@ -3,6 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import http from 'http';
 import { Server } from 'socket.io';
+import registerSocketHandlers from './socket.js';
 
 import authRoutes from './routes/authRoutes.js';
 import gameRoutes from './routes/gameRoutes.js';
@@ -18,7 +19,8 @@ const app = express();
 const server = http.createServer(app)
 const io = new Server(server, {
   cors: { origin: '*'},
-})
+});
+registerSocketHandlers(io);
 
 app.use((req, res, next) => {
   req.io = io;
@@ -37,19 +39,6 @@ const mongoURI = process.env.MONGO_URI;
 mongoose.connect(mongoURI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
-
-io.on('connection', (socket) => {
-  console.log('User Connected');
-
-  socket.on('join-room', (gameId) => {
-    socket.join(gameId);
-    console.log(`User joined room: ${gameId}`);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
-});
 
 const PORT = process.env.PORT || 3000;
 const hostname = '0.0.0.0';

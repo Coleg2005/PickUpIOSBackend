@@ -17,10 +17,11 @@ router.get('/:gameId', async (req, res) => {
 // POST a new message
 router.post('/', async (req, res) => {
   try {
-    const { gameId, userId, message, messageType } = req.body;
+    const { gameId, userId, username, message, messageType } = req.body;
     const newMessage = new GameMessage({
       gameId,
       userId,
+      username,
       message,
       timestamp: new Date(),
       messageType

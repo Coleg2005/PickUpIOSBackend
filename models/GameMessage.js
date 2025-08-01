@@ -12,6 +12,10 @@ const GameMessageSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true
   },
+  username: {
+    type: String,
+    required: true
+  },
   message: {
     type: String,
     required: true
