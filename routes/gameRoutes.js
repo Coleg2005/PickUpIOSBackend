@@ -126,7 +126,6 @@ router.patch('/removeMember', async (req, res) => {
     const initialLength = game.gameMembers.length;
     game.gameMembers = game.gameMembers.filter((existingMember) => existingMember._id.toString() !== member._id.toString());
     if (game.gameMembers.length === initialLength) {
-      console.log(here)
       return res.status(404).json({ error: 'User not in game' });
     }
 

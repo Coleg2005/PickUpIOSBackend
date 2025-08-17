@@ -2,7 +2,6 @@ import GameMessage from './models/GameMessage.js';
 
 export default function registerSocketHandlers(io) {
   io.on('connection', (socket) => {
-    console.log('User Connected');
 
     socket.on('join-room', (gameId) => {
       socket.join(gameId);
@@ -19,7 +18,6 @@ export default function registerSocketHandlers(io) {
     });
 
     socket.on('disconnect', () => {
-      console.log('User disconnected');
     });
   });
 }

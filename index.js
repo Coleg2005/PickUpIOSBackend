@@ -6,9 +6,11 @@ import { Server } from 'socket.io';
 import registerSocketHandlers from './socket.js';
 
 import authRoutes from './routes/authRoutes.js';
+import friendRoutes from './routes/friendRoutes.js';
 import gameRoutes from './routes/gameRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -29,8 +31,11 @@ app.use((req, res, next) => {
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use('/uploads', express.static('uploads'));
 
+app.use("/upload", uploadRoutes);
 app.use('/auth', authRoutes);
+app.use('/friend', friendRoutes);
 app.use('/game', gameRoutes);
 app.use('/profile', profileRoutes);
 app.use('/message', messageRoutes);
