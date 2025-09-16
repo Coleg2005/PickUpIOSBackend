@@ -11,6 +11,7 @@ import gameRoutes from './routes/gameRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import inboxRoutes from './routes/inboxRoutes.js';
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -32,7 +33,7 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(bodyParser.json());
 app.use('/uploads', express.static('uploads'));
-
+app.use("/inbox", inboxRoutes);
 app.use("/upload", uploadRoutes);
 app.use('/auth', authRoutes);
 app.use('/friend', friendRoutes);
