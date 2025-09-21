@@ -11,6 +11,9 @@ router.post('', async (req, res) => {
 
   try {
     const { name, date, location, fsq_id, sport, leader, description } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Game Name is required' });
+    }
     if (!name || !date || !location || !fsq_id || !sport || !leader ) {
       return res.status(400).json({ error: 'name, date, location, sport, and leader are required' });
     }
