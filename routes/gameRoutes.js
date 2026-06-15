@@ -4,6 +4,89 @@ import Game from '../models/Game.js'
 const router = express.Router();
 
 const SECRET = process.env.SECRET_KEY || 'dev-secret-key';
+const FSQ_KEY = process.env.FSQ_KEY;
+
+router.get('/places/search', async (req, res) => {
+  try {
+    const { query, ll, radius, limit = 50 } = req.query;
+
+    if (!FSQ_KEY) {
+      return res.status(500).json({ error: 'FSQ_KEY is not configured on the backend' });
+    }
+
+    if (!query || !ll || !radius) {
+      return res.status(400).json({ error: 'query, ll, and radius are required' });
+    }
+
+    const url = new URL('https://places-api.foursquare.com/places/search');
+    url.searchParams.set('query', String(query));
+    url.searchParams.set('ll', String(ll));
+    url.searchParams.set('radius', String(radius));
+    url.searchParams.set('limit', String(limit));
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${FSQ_KEY}`,
+        'X-Places-Api-Version': '2025-06-17',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: data?.error || 'Failed to fetch places',
+        details: data,
+      });
+    }
+
+    return res.json({ results: data.results || [] });
+  } catch (error) {
+    return res.status(500).json({
+      error: 'Failed to fetch places',
+      details: error.message,
+    });
+  }
+});
+
+router.get('/places/:placeId', async (req, res) => {
+  try {
+    const { placeId } = req.params;
+
+    if (!FSQ_KEY) {
+      return res.status(500).json({ error: 'FSQ_KEY is not configured on the backend' });
+    }
+
+    if (!placeId) {
+      return res.status(400).json({ error: 'placeId is required' });
+    }
+
+    const response = await fetch(`https://places-api.foursquare.com/places/${placeId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${FSQ_KEY}`,
+        'X-Places-Api-Version': '2025-06-17',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: data?.error || 'Failed to fetch place details',
+        details: data,
+      });
+    }
+
+    return res.json(data);
+  } catch (error) {
+    return res.status(500).json({
+      error: 'Failed to fetch place details',
+      details: error.message,
+    });
+  }
+});
 
 
 // Create game works
