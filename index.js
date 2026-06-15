@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import http from 'http';
 import { Server } from 'socket.io';
 import registerSocketHandlers from './socket.js';
+import path from 'path';
 
 import authRoutes from './routes/authRoutes.js';
 import friendRoutes from './routes/friendRoutes.js';
@@ -32,7 +33,7 @@ app.use((req, res, next) => {
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join('/var/www/uploads')));
 app.use("/inbox", inboxRoutes);
 app.use("/upload", uploadRoutes);
 app.use('/auth', authRoutes);

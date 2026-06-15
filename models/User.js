@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
   password: {
     type: String,
     required: true,
@@ -21,6 +26,14 @@ const userSchema = new mongoose.Schema({
       type: String,
       default: 'public/assets/default-pfp.jpg'
     }
+  },
+  resetToken: {
+    type: String,
+    default: null
+  },
+  resetTokenExpiry: {
+    type: Date,
+    default: null
   },
   createdAt: {
     type: Date,
