@@ -1,66 +1,76 @@
-import { Router } from 'express';
-import multer from 'multer';
-import { join } from 'path';
-import { existsSync, mkdirSync, unlinkSync } from 'fs';
-import User from '../models/User.js';
+import { Router } from "express";
+import multer from "multer";
+import path from "path";
+import cloudinary from "../config/cloudinary.js";
+import User from "../models/User.js";
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
-// Ensure persistent uploads folder exists
-const uploadDir = '/var/www/uploads';
-if (!existsSync(uploadDir)) {
-  mkdirSync(uploadDir, { recursive: true });
-}
+router.get("/pfp/:userid", async (req, res) => {
+  try {
+    const { userid } = req.params;
+    const user = await User.findById(userid);
 
-// Multer storage config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + file.originalname;
-    cb(null, uniqueName);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const picture = user.profile?.picture;
+
+    if (!picture) {
+      return res.status(404).json({ error: "Profile picture not found" });
+    }
+
+    if (picture.startsWith("http://") || picture.startsWith("https://")) {
+      return res.redirect(picture);
+    }
+
+    return res.sendFile(path.resolve(process.cwd(), picture));
+  } catch (err) {
+    console.error("Profile picture fetch error:", err);
+    res.status(500).json({ error: "Failed to load profile picture" });
   }
 });
-const upload = multer({ storage });
 
-// Upload endpoint
-router.post('/', upload.single('image'), async (req, res) => {
-  try {  
+router.post("/", upload.single("image"), async (req, res) => {
+  try {
     const { userid } = req.body;
     const file = req.file;
 
-    if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-    if (!userid) {
-      return res.status(400).json({ error: 'No user id provided' });
-    }
+    if (!file) return res.status(400).json({ error: "No file uploaded" });
+    if (!userid) return res.status(400).json({ error: "No user id provided" });
 
-    const user = await User.findOne({ _id: userid });
-    if (!user) {
-      return res.status(400).json({ error: 'Could not find user' });
-    }
+    const user = await User.findById(userid);
+    if (!user) return res.status(400).json({ error: "User not found" });
 
-    // Delete old profile picture if it exists
-    if (user.profile?.picture) {
-      const oldFilePath = join(uploadDir, user.profile.picture.split('/').pop());
-      if (existsSync(oldFilePath)) {
-        try {
-          unlinkSync(oldFilePath);
-        } catch (err) {
-          console.error('Failed to delete old profile picture:', err);
+    // Upload to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: "profile-pictures" },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
         }
-      }
+      ).end(file.buffer);
+    });
+
+    if (!result?.secure_url) {
+      return res.status(500).json({ error: "Cloudinary upload failed" });
     }
 
-    // Save new picture URL
-    user.profile.picture = `/uploads/${file.filename}`;
+    // Save new image URL
+    user.profile.picture = result.secure_url;
     await user.save();
 
-    // Return public URL immediately
-    res.status(201).json({ message: 'Picture uploaded successfully', url: user.profile.picture });
+    res.status(201).json({
+      message: "Picture uploaded successfully",
+      url: result.secure_url,
+    });
+
   } catch (err) {
-    console.error('Error uploading picture:', err);
-    res.status(500).json({ error: 'Error uploading picture' });
+    console.error("Upload error:", err);
+    res.status(500).json({ error: "Upload failed" });
   }
 });
 
