@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import bodyParser from 'body-parser';
 import http from 'http';
 import { Server } from 'socket.io';
 import registerSocketHandlers from './socket.js';
@@ -32,7 +31,7 @@ app.use((req, res, next) => {
 });
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 app.use('/uploads', express.static(path.join('/var/www/uploads')));
 app.use("/inbox", inboxRoutes);
 app.use("/upload", uploadRoutes);
@@ -43,13 +42,21 @@ app.use('/profile', profileRoutes);
 app.use('/message', messageRoutes);
 
 const mongoURI = process.env.MONGO_URI;
+
+if (!mongoURI) {
+  console.error("❌ MONGO_URI is missing");
+  process.exit(1);
+}
+
 mongoose.connect(mongoURI)
   .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 const PORT = process.env.PORT || 3000;
-const hostname = '0.0.0.0';
 
-server.listen(PORT, hostname, () => {
+server.listen(PORT, () => {
   console.log(`Server running at http://${hostname}:${PORT}`);
 }); 
