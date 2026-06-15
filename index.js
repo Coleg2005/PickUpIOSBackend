@@ -40,6 +40,9 @@ app.use('/friend', friendRoutes);
 app.use('/game', gameRoutes);
 app.use('/profile', profileRoutes);
 app.use('/message', messageRoutes);
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 
 const mongoURI = process.env.MONGO_URI;
 
