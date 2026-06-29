@@ -3,9 +3,8 @@ import GameMessage from './models/GameMessage.js';
 export default function registerSocketHandlers(io) {
   io.on('connection', (socket) => {
 
-    socket.on('join-room', (gameId) => {
+    socket.on('join-game', (gameId) => {
       socket.join(gameId);
-      console.log(`User joined room: ${gameId}`);
     });
 
     socket.on('send-message', async (data) => {

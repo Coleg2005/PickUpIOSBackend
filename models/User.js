@@ -46,8 +46,6 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Create a compound unique index
-userSchema.index({ username: 1, email: 1 }, { unique: true });
 
 const User = mongoose.model('User', userSchema);
 

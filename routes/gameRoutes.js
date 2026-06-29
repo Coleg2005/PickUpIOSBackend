@@ -94,9 +94,6 @@ router.post('', async (req, res) => {
 
   try {
     const { name, date, location, fsq_id, sport, leader, description } = req.body;
-    if (!name) {
-      return res.status(400).json({ error: 'Game Name is required' });
-    }
     if (!name || !date || !location || !fsq_id || !sport || !leader ) {
       return res.status(400).json({ error: 'name, date, location, sport, and leader are required' });
     }
@@ -184,10 +181,13 @@ router.delete('/:gameid', async (req, res) => {
       return res.status(400).json({ error: 'gameid is required' });
     }
     const game = await Game.findOne({ _id: gameid });
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
     await game.deleteOne();
     res.json({ message: 'Game deleted successfully' });
-  } catch {
-    res.status(500).json({ error: 'Error deleting game' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error deleting game', details: error.message });
   }
 });
 
@@ -217,7 +217,7 @@ router.patch('/removeMember', async (req, res) => {
 
     await game.save();
     res.json({ message: 'Game member removed successfully' });
-  } catch {
+  } catch (error) {
     res.status(500).json({ error: 'Error removing game member', details: error.message });
   }
 });
@@ -246,7 +246,7 @@ router.patch('/member', async (req, res) => {
     game.gameMembers.push(member._id);
     await game.save();
     res.json({ message: 'Game member added successfully' });
-  } catch {
+  } catch (error) {
     res.status(500).json({ error: 'Error adding game member', details: error.message });
   }
 });

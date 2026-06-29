@@ -17,7 +17,7 @@ router.patch('/request', async (req, res) => {
     }
 
     if (!user.friends) user.friends = [];
-    const alreadyFriend = user.friends.some(f => f._id.toString() === friend._id.toString());
+    const alreadyFriend = user.friends.some(f => (f._id || f).toString() === friend._id.toString());
     if (alreadyFriend) {
       return res.status(400).json({ error: 'Already friends' });
     }
@@ -45,7 +45,7 @@ router.patch('/accept', async (req, res) => {
     if (!user.friends) user.friends = [];
     if (!friend.friends) friend.friends = [];
 
-    const alreadyFriend = user.friends.some(f => f._id.toString() === friend._id.toString());
+    const alreadyFriend = user.friends.some(f => (f._id || f).toString() === friend._id.toString());
     if (alreadyFriend) {
       return res.status(400).json({ error: 'Already friends' });
     }
