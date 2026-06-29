@@ -50,14 +50,12 @@ router.patch('/accept', async (req, res) => {
       return res.status(400).json({ error: 'Already friends' });
     }
 
-    // Add each other to friends arrays
-    user.friends.push(friend._id);
-    friend.friends.push(user._id);
-    await user.save();
-    await friend.save();
+    await User.updateOne({ _id: user._id }, { $addToSet: { friends: friend._id } });
+    await User.updateOne({ _id: friend._id }, { $addToSet: { friends: user._id } });
 
-    res.json({ message: 'Friend request accepted', friends: user.friends });
-  } catch {
+    res.json({ message: 'Friend request accepted' });
+  } catch (err) {
+    console.error('Accept friend error:', err);
     res.status(500).json({ error: 'Error accepting friend request' });
   }
 });
@@ -75,26 +73,10 @@ router.patch('/remove', async (req, res) => {
       return res.status(404).json({ error: 'User or friend not found' });
     }
 
-    if (!user.friends) user.friends = [];
-    if (!friend.friends) friend.friends = [];
-    // Remove friend from user's friends
-    user.friends = user.friends.filter(f => {
-      if (typeof f === 'object' && f._id) {
-        return f._id.toString() !== friend._id.toString();
-      }
-      return f.toString() !== friend._id.toString();
-    });
-    // Remove user from friend's friends
-    friend.friends = friend.friends.filter(f => {
-      if (typeof f === 'object' && f._id) {
-        return f._id.toString() !== user._id.toString();
-      }
-      return f.toString() !== user._id.toString();
-    });
-    await user.save();
-    await friend.save();
+    await User.updateOne({ _id: user._id }, { $pull: { friends: friend._id } });
+    await User.updateOne({ _id: friend._id }, { $pull: { friends: user._id } });
 
-    res.json({ message: 'Friend removed successfully', friends: user.friends });
+    res.json({ message: 'Friend removed successfully' });
   } catch {
     res.status(500).json({ error: 'Error removing friend' });
   }

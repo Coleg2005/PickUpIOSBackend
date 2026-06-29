@@ -93,7 +93,7 @@ router.get('/places/:placeId', async (req, res) => {
 router.post('', async (req, res) => {
 
   try {
-    const { name, date, location, fsq_id, sport, leader, description } = req.body;
+    const { name, date, location, fsq_id, sport, leader, description, maxPlayers } = req.body;
     if (!name || !date || !location || !fsq_id || !sport || !leader ) {
       return res.status(400).json({ error: 'name, date, location, sport, and leader are required' });
     }
@@ -101,13 +101,43 @@ router.post('', async (req, res) => {
     if (!leadUser) {
       return res.status(404).json({ error: 'Leader not found' });
     }
-    const game = new Game({ name, gameMembers: [leadUser], date, location, fsq_id, sport, leader: leadUser._id, description: description });
+    const game = new Game({ name, gameMembers: [leadUser], date, location, fsq_id, sport, leader: leadUser._id, description, maxPlayers: maxPlayers || null });
     await game.save();
 
     res.status(201).json({ message: 'Game created successfully' });
   } catch (error) {
     
     res.status(500).json({ error: "Failed to create game", details: error.message });
+  }
+});
+
+// All distinct fsq_ids that currently have games
+router.get('/active-locations', async (req, res) => {
+  try {
+    const fsq_ids = await Game.distinct('fsq_id');
+    res.json(fsq_ids);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching active locations', details: error.message });
+  }
+});
+
+// Bulk fetch games for multiple locations in one query
+router.post('/by-locations', async (req, res) => {
+  try {
+    const { fsq_ids } = req.body;
+    if (!fsq_ids || !Array.isArray(fsq_ids) || fsq_ids.length === 0) {
+      return res.status(400).json({ error: 'fsq_ids array is required' });
+    }
+    const games = await Game.find({ fsq_id: { $in: fsq_ids } }).populate('gameMembers', '_id');
+    // Group by fsq_id
+    const grouped = {};
+    for (const game of games) {
+      if (!grouped[game.fsq_id]) grouped[game.fsq_id] = [];
+      grouped[game.fsq_id].push(game);
+    }
+    res.json(grouped);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching games by locations', details: error.message });
   }
 });
 
@@ -132,7 +162,7 @@ router.get('/user/lead/:userid', async (req, res) => {
       return res.status(400).json({ error: 'user id is required' });
     }
 
-    const games = await Game.find({ leader: userid });
+    const games = await Game.find({ leader: userid }).populate('gameMembers', '_id');
     res.json(games);
   } catch {
     res.status(500).json({ error: 'Error getting lead game' });
@@ -147,7 +177,7 @@ router.get('/user/member/:userid', async (req, res) => {
       return res.status(400).json({ error: 'userid is required' });
     }
 
-    const games = await Game.find({ gameMembers: userid, leader: { $ne: userid } });
+    const games = await Game.find({ gameMembers: userid, leader: { $ne: userid } }).populate('gameMembers', '_id');
     res.json(games);
   } catch {
     res.status(500).json({ error: 'Error getting member game' });
